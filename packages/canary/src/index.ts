@@ -23,7 +23,7 @@ function createPromptModule() {
     select,
   };
 
-  type GetPrompt<U extends keyof typeof promptStore> = typeof promptStore[U];
+  type GetPrompt<U extends keyof typeof promptStore> = (typeof promptStore)[U];
   type GetAnswerType<U extends keyof typeof promptStore> = GetPrompt<U> extends Prompt<
     infer Answer,
     any

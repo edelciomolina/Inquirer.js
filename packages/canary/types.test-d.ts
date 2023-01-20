@@ -81,4 +81,26 @@ describe('Library types work properly', () => {
       ]);
     }).toBeInstanceOf(Function);
   });
+
+  it('register prompt', () => {
+    expect(() => {
+      inquirer.prompt([
+        {
+          /* @ts-expect-error: this prompt doesn't exist */
+          type: 'unknown-prompt',
+          name: 'ask_last_name',
+          message: 'Are you willing to share your last name',
+        },
+      ]);
+
+      inquirer.registerPrompt('unknown-prompt', {} as any);
+      inquirer.prompt([
+        {
+          type: 'unknown-prompt',
+          name: 'ask_last_name',
+          message: 'Are you willing to share your last name',
+        },
+      ]);
+    }).toBeInstanceOf(Function);
+  });
 });

@@ -24,8 +24,6 @@ jobs:
         env:
           CI: true
           FORCE_COLOR: 1
-      - name: Compile TS code
-        run: yarn lerna run tsc
 
       # TS must run before we check dependencies since otherwise our exports map points to nothing.
       - name: Typescript
