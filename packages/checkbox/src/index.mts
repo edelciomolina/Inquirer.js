@@ -5,6 +5,7 @@ import {
   usePrefix,
   usePagination,
   useMemo,
+  makeTheme,
   isUpKey,
   isDownKey,
   isSpaceKey,
@@ -18,6 +19,20 @@ import type {} from '@inquirer/type';
 import chalk from 'chalk';
 import figures from 'figures';
 import ansiEscapes from 'ansi-escapes';
+
+type CheckboxTheme = {
+  checkedIcon: string;
+  uncheckedIcon: string;
+  cursorIcon: string;
+  disabled: (text: string) => string;
+};
+
+const checkboxTheme: CheckboxTheme = {
+  checkedIcon: chalk.green(figures.circleFilled),
+  uncheckedIcon: figures.circle,
+  cursorIcon: figures.pointer,
+  disabled: (text: string) => chalk.dim(`- ${text}`),
+};
 
 type Choice<Value> = {
   name?: string;
@@ -33,7 +48,11 @@ type Config<Value> = PromptConfig<{
   choices: ReadonlyArray<Choice<Value> | Separator>;
   loop?: boolean;
   required?: boolean;
-  theme?: Partial<Theme>;
+  theme?: Partial<
+    Theme<CheckboxTheme> & {
+      style: Partial<Theme<CheckboxTheme>['style']>;
+    }
+  >;
 }>;
 
 type Item<Value> = Separator | Choice<Value>;
@@ -56,27 +75,13 @@ function check(checked: boolean) {
   };
 }
 
-function renderItem<Value>({ item, isActive }: { item: Item<Value>; isActive: boolean }) {
-  if (Separator.isSeparator(item)) {
-    return ` ${item.separator}`;
-  }
-
-  const line = item.name || item.value;
-  if (item.disabled) {
-    const disabledLabel =
-      typeof item.disabled === 'string' ? item.disabled : '(disabled)';
-    return chalk.dim(`- ${line} ${disabledLabel}`);
-  }
-
-  const checkbox = item.checked ? chalk.green(figures.circleFilled) : figures.circle;
-  const color = isActive ? chalk.cyan : (x: string) => x;
-  const prefix = isActive ? figures.pointer : ' ';
-  return color(`${prefix}${checkbox} ${line}`);
-}
-
 export default createPrompt(
-  <Value extends unknown>(config: Config<Value>, done: (value: Array<Value>) => void) => {
-    const { instructions, pageSize, loop = true, choices, required, theme } = config;
+  <Value extends unknown>(
+    config: Config<Value> & { message: string },
+    done: (value: Array<Value>) => void,
+  ) => {
+    const { instructions, pageSize, loop = true, choices, required } = config;
+    const theme = makeTheme<CheckboxTheme>(checkboxTheme, config.theme);
     const prefix = usePrefix({ theme });
     const [status, setStatus] = useState('pending');
     const [items, setItems] = useState<ReadonlyArray<Item<Value>>>(
@@ -144,12 +149,28 @@ export default createPrompt(
       }
     });
 
-    const message = chalk.bold(config.message);
+    const message = theme.style.message(config.message);
 
     const page = usePagination<Item<Value>>({
       items,
       active,
-      renderItem,
+      renderItem({ item, isActive }: { item: Item<Value>; isActive: boolean }) {
+        if (Separator.isSeparator(item)) {
+          return ` ${item.separator}`;
+        }
+
+        const line = item.name || item.value;
+        if (item.disabled) {
+          const disabledLabel =
+            typeof item.disabled === 'string' ? item.disabled : '(disabled)';
+          return theme.disabled(`${line} ${disabledLabel}`);
+        }
+
+        const checkbox = item.checked ? theme.checkedIcon : theme.uncheckedIcon;
+        const color = isActive ? theme.style.highlight : (x: string) => x;
+        const cursor = isActive ? theme.cursorIcon : ' ';
+        return color(`${cursor}${checkbox} ${line}`);
+      },
       pageSize,
       loop,
     });
@@ -158,7 +179,7 @@ export default createPrompt(
       const selection = items
         .filter(isChecked)
         .map((choice) => choice.name || choice.value);
-      return `${prefix} ${message} ${chalk.cyan(selection.join(', '))}`;
+      return `${prefix} ${message} ${theme.style.answer(selection.join(', '))}`;
     }
 
     let helpTip = '';
@@ -167,10 +188,10 @@ export default createPrompt(
         helpTip = instructions;
       } else {
         const keys = [
-          `${chalk.cyan.bold('<space>')} to select`,
-          `${chalk.cyan.bold('<a>')} to toggle all`,
-          `${chalk.cyan.bold('<i>')} to invert selection`,
-          `and ${chalk.cyan.bold('<enter>')} to proceed`,
+          `${theme.style.key('space')} to select`,
+          `${theme.style.key('a')} to toggle all`,
+          `${theme.style.key('i')} to invert selection`,
+          `and ${theme.style.key('enter')} to proceed`,
         ];
         helpTip = ` (Press ${keys.join(', ')})`;
       }
@@ -178,7 +199,7 @@ export default createPrompt(
 
     let error = '';
     if (errorMsg) {
-      error = chalk.red(`> ${errorMsg}`);
+      error = theme.style.error(errorMsg);
     }
 
     return `${prefix} ${message}${helpTip}\n${page}\n${error}${ansiEscapes.cursorHide}`;

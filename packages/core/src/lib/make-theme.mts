@@ -2,15 +2,9 @@ import type { Prettify } from '@inquirer/type';
 import { defaultTheme, type Theme } from './theme.mjs';
 
 export function makeTheme<SpecificTheme extends {}>(
-  // @ts-expect-error: TODO Fix me
-  theme: SpecificTheme & Partial<Theme> = {},
-): Prettify<SpecificTheme & Theme> {
-  return {
-    ...defaultTheme,
-    ...theme,
-    style: {
-      ...defaultTheme.style,
-      ...theme.style,
-    },
-  };
+  ...themes: ReadonlyArray<undefined | Partial<Theme<SpecificTheme>>>
+): Prettify<Theme<SpecificTheme>> {
+  return Object.assign({}, defaultTheme, ...themes, {
+    style: Object.assign({}, defaultTheme.style, ...themes.map((theme) => theme?.style)),
+  });
 }
