@@ -6,6 +6,7 @@ import {
   isEnterKey,
   Separator,
   type PromptConfig,
+  type Theme,
 } from '@inquirer/core';
 import type {} from '@inquirer/type';
 import chalk from 'chalk';
@@ -20,6 +21,7 @@ type Choice<Value> = {
 
 type RawlistConfig<Value> = PromptConfig<{
   choices: ReadonlyArray<Choice<Value> | Separator>;
+  theme?: Partial<Theme>;
 }>;
 
 function isSelectableChoice<T>(
@@ -30,11 +32,11 @@ function isSelectableChoice<T>(
 
 export default createPrompt(
   <Value extends unknown>(config: RawlistConfig<Value>, done: (value: Value) => void) => {
-    const { choices } = config;
+    const { choices, theme } = config;
     const [status, setStatus] = useState<string>('pending');
     const [value, setValue] = useState<string>('');
     const [errorMsg, setError] = useState<string | undefined>(undefined);
-    const prefix = usePrefix();
+    const prefix = usePrefix({ theme });
 
     useKeypress((key, rl) => {
       if (isEnterKey(key)) {

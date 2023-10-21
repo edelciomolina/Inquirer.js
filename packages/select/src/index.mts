@@ -12,6 +12,7 @@ import {
   isNumberKey,
   Separator,
   type PromptConfig,
+  type Theme,
 } from '@inquirer/core';
 import type {} from '@inquirer/type';
 import chalk from 'chalk';
@@ -30,6 +31,7 @@ type SelectConfig<Value> = PromptConfig<{
   choices: ReadonlyArray<Choice<Value> | Separator>;
   pageSize?: number;
   loop?: boolean;
+  theme?: Partial<Theme>;
 }>;
 
 type Item<Value> = Separator | Choice<Value>;
@@ -60,9 +62,9 @@ export default createPrompt(
     config: SelectConfig<Value>,
     done: (value: Value) => void,
   ): string => {
-    const { choices: items, loop = true, pageSize } = config;
+    const { choices: items, loop = true, pageSize, theme } = config;
     const firstRender = useRef(true);
-    const prefix = usePrefix();
+    const prefix = usePrefix({ theme });
     const [status, setStatus] = useState('pending');
 
     const bounds = useMemo(() => {

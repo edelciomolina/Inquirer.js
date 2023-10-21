@@ -12,6 +12,7 @@ import {
   isEnterKey,
   Separator,
   type PromptConfig,
+  type Theme,
 } from '@inquirer/core';
 import type {} from '@inquirer/type';
 import chalk from 'chalk';
@@ -27,12 +28,12 @@ type Choice<Value> = {
 };
 
 type Config<Value> = PromptConfig<{
-  prefix?: string;
   pageSize?: number;
   instructions?: string | boolean;
   choices: ReadonlyArray<Choice<Value> | Separator>;
   loop?: boolean;
   required?: boolean;
+  theme?: Partial<Theme>;
 }>;
 
 type Item<Value> = Separator | Choice<Value>;
@@ -75,14 +76,8 @@ function renderItem<Value>({ item, isActive }: { item: Item<Value>; isActive: bo
 
 export default createPrompt(
   <Value extends unknown>(config: Config<Value>, done: (value: Array<Value>) => void) => {
-    const {
-      prefix = usePrefix(),
-      instructions,
-      pageSize,
-      loop = true,
-      choices,
-      required,
-    } = config;
+    const { instructions, pageSize, loop = true, choices, required, theme } = config;
+    const prefix = usePrefix({ theme });
     const [status, setStatus] = useState('pending');
     const [items, setItems] = useState<ReadonlyArray<Item<Value>>>(
       choices.map((choice) => ({ ...choice })),

@@ -6,19 +6,21 @@ import {
   isEnterKey,
   usePrefix,
   type PromptConfig,
+  type Theme,
 } from '@inquirer/core';
 import type {} from '@inquirer/type';
 
 type ConfirmConfig = PromptConfig<{
   default?: boolean;
   transformer?: (value: boolean) => string;
+  theme?: Partial<Theme>;
 }>;
 
 export default createPrompt<boolean, ConfirmConfig>((config, done) => {
-  const { transformer = (answer) => (answer ? 'yes' : 'no') } = config;
+  const { transformer = (answer) => (answer ? 'yes' : 'no'), theme } = config;
   const [status, setStatus] = useState('pending');
   const [value, setValue] = useState('');
-  const prefix = usePrefix();
+  const prefix = usePrefix({ theme });
 
   useKeypress((key, rl) => {
     if (isEnterKey(key)) {

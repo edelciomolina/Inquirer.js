@@ -5,6 +5,7 @@ import {
   usePrefix,
   isEnterKey,
   type PromptConfig,
+  type Theme,
 } from '@inquirer/core';
 import type {} from '@inquirer/type';
 import chalk from 'chalk';
@@ -18,6 +19,7 @@ type ExpandConfig = PromptConfig<{
   choices: ReadonlyArray<ExpandChoice>;
   default?: string;
   expanded?: boolean;
+  theme?: Partial<Theme>;
 }>;
 
 const helpChoice = {
@@ -41,12 +43,13 @@ export default createPrompt<string, ExpandConfig>((config, done) => {
     choices,
     default: defaultKey = 'h',
     expanded: defaultExpandState = false,
+    theme,
   } = config;
   const [status, setStatus] = useState<string>('pending');
   const [value, setValue] = useState<string>('');
   const [expanded, setExpanded] = useState<boolean>(defaultExpandState);
   const [errorMsg, setError] = useState<string | undefined>(undefined);
-  const prefix = usePrefix();
+  const prefix = usePrefix({ theme });
 
   useKeypress((event, rl) => {
     if (isEnterKey(event)) {

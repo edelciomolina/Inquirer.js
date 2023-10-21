@@ -9,6 +9,7 @@ import {
   isEnterKey,
   type PromptConfig,
   type InquirerReadline,
+  type Theme,
 } from '@inquirer/core';
 import type {} from '@inquirer/type';
 
@@ -17,10 +18,11 @@ type EditorConfig = PromptConfig<{
   postfix?: string;
   waitForUseInput?: boolean;
   validate?: (value: string) => boolean | string | Promise<string | boolean>;
+  theme?: Partial<Theme>;
 }>;
 
 export default createPrompt<string, EditorConfig>((config, done) => {
-  const { waitForUseInput = true, validate = () => true } = config;
+  const { waitForUseInput = true, validate = () => true, theme } = config;
   const [status, setStatus] = useState<string>('pending');
   const [value, setValue] = useState<string>(config.default || '');
   const [errorMsg, setError] = useState<string | undefined>(undefined);
@@ -71,7 +73,7 @@ export default createPrompt<string, EditorConfig>((config, done) => {
   });
 
   const isLoading = status === 'loading';
-  const prefix = usePrefix(isLoading);
+  const prefix = usePrefix({ isLoading, theme });
 
   let message = chalk.bold(config.message);
   if (status === 'loading') {

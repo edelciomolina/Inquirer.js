@@ -28,7 +28,7 @@ const confirm = createPrompt<boolean, { message: string; default?: boolean }>(
   (config, done) => {
     const [status, setStatus] = useState('pending');
     const [value, setValue] = useState('');
-    const prefix = usePrefix();
+    const prefix = usePrefix({});
 
     useKeypress((key, rl) => {
       if (isEnterKey(key)) {
