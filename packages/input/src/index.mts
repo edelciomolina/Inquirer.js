@@ -5,11 +5,11 @@ import {
   usePrefix,
   isEnterKey,
   isBackspaceKey,
+  makeTheme,
   type PromptConfig,
   type Theme,
 } from '@inquirer/core';
 import type {} from '@inquirer/type';
-import chalk from 'chalk';
 
 type InputConfig = PromptConfig<{
   default?: string;
@@ -19,7 +19,8 @@ type InputConfig = PromptConfig<{
 }>;
 
 export default createPrompt<string, InputConfig>((config, done) => {
-  const { validate = () => true, theme } = config;
+  const { validate = () => true } = config;
+  const theme = makeTheme(config.theme);
   const [status, setStatus] = useState<string>('pending');
   const [defaultValue = '', setDefaultValue] = useState<string | undefined>(
     config.default,
@@ -64,23 +65,22 @@ export default createPrompt<string, InputConfig>((config, done) => {
     }
   });
 
-  const message = chalk.bold(config.message);
+  const message = theme.style.message(config.message);
   let formattedValue = value;
   if (typeof config.transformer === 'function') {
     formattedValue = config.transformer(value, { isFinal: status === 'done' });
-  }
-  if (status === 'done') {
-    formattedValue = chalk.cyan(formattedValue);
+  } else if (status === 'done') {
+    formattedValue = theme.style.answer(formattedValue);
   }
 
   let defaultStr = '';
   if (defaultValue && status !== 'done' && !value) {
-    defaultStr = chalk.dim(` (${defaultValue})`);
+    defaultStr = ` ${theme.style.defaultAnswer(defaultValue)}`;
   }
 
   let error = '';
   if (errorMsg) {
-    error = chalk.red(`> ${errorMsg}`);
+    error = theme.style.error(errorMsg);
   }
 
   return [`${prefix} ${message}${defaultStr} ${formattedValue}`, error];
