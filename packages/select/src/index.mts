@@ -20,6 +20,16 @@ import chalk from 'chalk';
 import figures from 'figures';
 import ansiEscapes from 'ansi-escapes';
 
+type SelectTheme = {
+  cursorIcon: string;
+  disabled: (text: string) => string;
+};
+
+const selectTheme: SelectTheme = {
+  cursorIcon: figures.pointer,
+  disabled: (text: string) => chalk.dim(`- ${text}`),
+};
+
 type Choice<Value> = {
   value: Value;
   name?: string;
@@ -41,23 +51,6 @@ function isSelectable<Value>(item: Item<Value>): item is Choice<Value> {
   return !Separator.isSeparator(item) && !item.disabled;
 }
 
-function renderItem<Value>({ item, isActive }: { item: Item<Value>; isActive: boolean }) {
-  if (Separator.isSeparator(item)) {
-    return ` ${item.separator}`;
-  }
-
-  const line = item.name || item.value;
-  if (item.disabled) {
-    const disabledLabel =
-      typeof item.disabled === 'string' ? item.disabled : '(disabled)';
-    return chalk.dim(`- ${line} ${disabledLabel}`);
-  }
-
-  const color = isActive ? chalk.cyan : (x: string) => x;
-  const prefix = isActive ? figures.pointer : ` `;
-  return color(`${prefix} ${line}`);
-}
-
 export default createPrompt(
   <Value extends unknown>(
     config: SelectConfig<Value> & { message: string },
@@ -65,7 +58,7 @@ export default createPrompt(
   ): string => {
     const { choices: items, loop = true, pageSize } = config;
     const firstRender = useRef(true);
-    const theme = makeTheme(config.theme);
+    const theme = makeTheme<SelectTheme>(selectTheme, config.theme);
     const prefix = usePrefix({ theme });
     const [status, setStatus] = useState('pending');
 
@@ -120,14 +113,31 @@ export default createPrompt(
     const page = usePagination<Item<Value>>({
       items,
       active,
-      renderItem,
+      renderItem({ item, isActive }: { item: Item<Value>; isActive: boolean }) {
+        if (Separator.isSeparator(item)) {
+          return ` ${item.separator}`;
+        }
+
+        const line = item.name || item.value;
+        if (item.disabled) {
+          const disabledLabel =
+            typeof item.disabled === 'string' ? item.disabled : '(disabled)';
+          return theme.disabled(`${line} ${disabledLabel}`);
+        }
+
+        const color = isActive ? theme.style.highlight : (x: string) => x;
+        const cursor = isActive ? theme.cursorIcon : ` `;
+        return color(`${cursor} ${line}`);
+      },
       pageSize,
       loop,
     });
 
     if (status === 'done') {
       return `${prefix} ${message} ${theme.style.answer(
-        selectedChoice.name || String(selectedChoice.value),
+        selectedChoice.name ||
+          // TODO: Could we enforce that at the type level? Name should be defined for non-string values.
+          String(selectedChoice.value),
       )}`;
     }
 
