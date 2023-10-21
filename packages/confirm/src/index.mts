@@ -1,10 +1,10 @@
-import chalk from 'chalk';
 import {
   createPrompt,
   useState,
   useKeypress,
   isEnterKey,
   usePrefix,
+  makeTheme,
   type PromptConfig,
   type Theme,
 } from '@inquirer/core';
@@ -17,9 +17,10 @@ type ConfirmConfig = PromptConfig<{
 }>;
 
 export default createPrompt<boolean, ConfirmConfig>((config, done) => {
-  const { transformer = (answer) => (answer ? 'yes' : 'no'), theme } = config;
+  const { transformer = (answer) => (answer ? 'yes' : 'no') } = config;
   const [status, setStatus] = useState('pending');
   const [value, setValue] = useState('');
+  const theme = makeTheme(config.theme);
   const prefix = usePrefix({ theme });
 
   useKeypress((key, rl) => {
@@ -39,11 +40,13 @@ export default createPrompt<boolean, ConfirmConfig>((config, done) => {
   let formattedValue = value;
   let defaultValue = '';
   if (status === 'done') {
-    formattedValue = chalk.cyan(value);
+    formattedValue = theme.style.answer(value);
   } else {
-    defaultValue = chalk.dim(config.default === false ? ' (y/N)' : ' (Y/n)');
+    defaultValue = ` ${theme.style.defaultAnswer(
+      config.default === false ? 'y/N' : 'Y/n',
+    )}`;
   }
 
-  const message = chalk.bold(config.message);
+  const message = theme.style.message(config.message);
   return `${prefix} ${message}${defaultValue} ${formattedValue}`;
 });

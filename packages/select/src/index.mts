@@ -11,6 +11,7 @@ import {
   isDownKey,
   isNumberKey,
   Separator,
+  makeTheme,
   type PromptConfig,
   type Theme,
 } from '@inquirer/core';
@@ -59,11 +60,12 @@ function renderItem<Value>({ item, isActive }: { item: Item<Value>; isActive: bo
 
 export default createPrompt(
   <Value extends unknown>(
-    config: SelectConfig<Value>,
+    config: SelectConfig<Value> & { message: string },
     done: (value: Value) => void,
   ): string => {
-    const { choices: items, loop = true, pageSize, theme } = config;
+    const { choices: items, loop = true, pageSize } = config;
     const firstRender = useRef(true);
+    const theme = makeTheme(config.theme);
     const prefix = usePrefix({ theme });
     const [status, setStatus] = useState('pending');
 
@@ -109,7 +111,7 @@ export default createPrompt(
       }
     });
 
-    let message = chalk.bold(config.message);
+    let message = theme.style.message(config.message);
     if (firstRender.current) {
       firstRender.current = false;
       message += chalk.dim(' (Use arrow keys)');
@@ -124,8 +126,8 @@ export default createPrompt(
     });
 
     if (status === 'done') {
-      return `${prefix} ${message} ${chalk.cyan(
-        selectedChoice.name || selectedChoice.value,
+      return `${prefix} ${message} ${theme.style.answer(
+        selectedChoice.name || String(selectedChoice.value),
       )}`;
     }
 

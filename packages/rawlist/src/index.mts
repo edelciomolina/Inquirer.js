@@ -5,6 +5,7 @@ import {
   usePrefix,
   isEnterKey,
   Separator,
+  makeTheme,
   type PromptConfig,
   type Theme,
 } from '@inquirer/core';
@@ -31,11 +32,15 @@ function isSelectableChoice<T>(
 }
 
 export default createPrompt(
-  <Value extends unknown>(config: RawlistConfig<Value>, done: (value: Value) => void) => {
-    const { choices, theme } = config;
+  <Value extends unknown>(
+    config: RawlistConfig<Value> & { message: string },
+    done: (value: Value) => void,
+  ) => {
+    const { choices } = config;
     const [status, setStatus] = useState<string>('pending');
     const [value, setValue] = useState<string>('');
     const [errorMsg, setError] = useState<string | undefined>(undefined);
+    const theme = makeTheme(config.theme);
     const prefix = usePrefix({ theme });
 
     useKeypress((key, rl) => {
@@ -66,10 +71,10 @@ export default createPrompt(
       }
     });
 
-    const message = chalk.bold(config.message);
+    const message = theme.style.message(config.message);
 
     if (status === 'done') {
-      return `${prefix} ${message} ${chalk.cyan(value)}`;
+      return `${prefix} ${message} ${theme.style.answer(value)}`;
     }
 
     let index = 0;
@@ -92,7 +97,7 @@ export default createPrompt(
 
     let error = '';
     if (errorMsg) {
-      error = chalk.red(`> ${errorMsg}`);
+      error = theme.style.error(errorMsg);
     }
 
     return [

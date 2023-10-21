@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { editAsync } from 'external-editor';
 import {
   createPrompt,
@@ -7,6 +6,7 @@ import {
   useKeypress,
   usePrefix,
   isEnterKey,
+  makeTheme,
   type PromptConfig,
   type InquirerReadline,
   type Theme,
@@ -22,10 +22,14 @@ type EditorConfig = PromptConfig<{
 }>;
 
 export default createPrompt<string, EditorConfig>((config, done) => {
-  const { waitForUseInput = true, validate = () => true, theme } = config;
+  const { waitForUseInput = true, validate = () => true } = config;
   const [status, setStatus] = useState<string>('pending');
   const [value, setValue] = useState<string>(config.default || '');
   const [errorMsg, setError] = useState<string | undefined>(undefined);
+
+  const theme = makeTheme(config.theme);
+  const isLoading = status === 'loading';
+  const prefix = usePrefix({ isLoading, theme });
 
   function startEditor(rl: InquirerReadline) {
     rl.pause();
@@ -72,20 +76,21 @@ export default createPrompt<string, EditorConfig>((config, done) => {
     }
   });
 
-  const isLoading = status === 'loading';
-  const prefix = usePrefix({ isLoading, theme });
-
-  let message = chalk.bold(config.message);
+  const message = theme.style.message(config.message);
+  let helpTip = '';
   if (status === 'loading') {
-    message += chalk.dim(' Received');
+    helpTip = theme.style.defaultAnswer('Received');
   } else if (status === 'pending') {
-    message += chalk.dim(' Press <enter> to launch your preferred editor.');
+    const enterKey = theme.style.key('enter');
+    helpTip = theme.style.defaultAnswer(
+      `Press ${enterKey} to launch your preferred editor.`,
+    );
   }
 
   let error = '';
   if (errorMsg) {
-    error = chalk.red(`> ${errorMsg}`);
+    error = theme.style.error(errorMsg);
   }
 
-  return [`${prefix} ${message}`, error];
+  return [`${prefix} ${message} ${helpTip}`, error];
 });
