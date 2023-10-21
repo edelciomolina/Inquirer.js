@@ -11,7 +11,6 @@ import {
   isNumberKey,
   isEnterKey,
   Separator,
-  type PromptConfig,
 } from '@inquirer/core';
 import type {} from '@inquirer/type';
 import chalk from 'chalk';
@@ -26,14 +25,15 @@ type Choice<Value> = {
   type?: never;
 };
 
-type Config<Value> = PromptConfig<{
+type Config<Value> = {
+  message: string;
   prefix?: string;
   pageSize?: number;
   instructions?: string | boolean;
   choices: ReadonlyArray<Choice<Value> | Separator>;
   loop?: boolean;
   required?: boolean;
-}>;
+};
 
 type Item<Value> = Separator | Choice<Value>;
 
